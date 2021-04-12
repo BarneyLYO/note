@@ -602,7 +602,7 @@
       ```js
         function createTask (tgt,...args) {
           return () => {
-            target (...args) {
+            tgt (...args) {
               // .......
             }
           }
