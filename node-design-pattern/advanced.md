@@ -221,7 +221,6 @@
     }
     function cancelWrapeer(func, ...args) {
       if (cancelReq) return Promise.reject(new CancelError());
-
       return func(...args);
     }
     return {
@@ -287,3 +286,262 @@
   ```
 
   - production: module: caf (Cancelable async Flows)
+
+## Running CPU-bound tasks
+
+- CPU-bound: a synchronous task that takes a long time to complete and never gives back the control to the evnet loop until it has finished
+
+  - subsum
+
+  ```ts
+  export class SubsetSum extends EventEmitter {
+    constructor(sum, set) {
+      super();
+      this.sum = sum;
+      this.set = set;
+      this.totalSubsets = 0;
+    }
+
+    _combine(set, subset) {
+      for (let i = 0, len = set.length; i < len; i++) {
+        const newSubset = subset.concat(set[i]);
+        this._combine(set.slice(i + 1), newSubset);
+        this._processSubset(newSubset);
+      }
+    }
+
+    _processSubset(subset) {
+      console.log('subset', ++this.totalSubsets, subset);
+      const res = subset.reduce((prev, item) => prev + item, 0);
+
+      if (res === this.sum) this.emit('match', subset);
+    }
+
+    start() {
+      this._combine(this.set, []);
+      this.emit('end');
+    }
+  }
+
+  import { createServer } from 'http';
+  import { SubsetSum } from './subsetSum.js';
+  createServer((req, res) => {
+    const url = new URL(req.url, 'http://localhost');
+    if (url.pathname !== '/subsetSum') {
+      res.writeHead(200);
+      return res.end(`I'm alive!\n`);
+    }
+
+    const data = JSON.parse(url.searchParams.get('data'));
+    const sum = JSON.parse(url.searchParams.get('sum'));
+
+    res.writeHead(200);
+    const subsetSum = new SubsetSum(sum, data);
+    subsetSum.on('match', matched => {
+      res.write(`MATCH:${JSON.stringify(matched)}\n`);
+    });
+
+    subsetSum.on('end', () => res.end());
+    subsetSum.start();
+  }).listen(8000, () => console.log('Server started'));
+  ```
+
+  - Above code will realy make the event loop block
+
+- interleaving with setImmediate
+
+  - CPU-bound algorithm is built upon a set of steps, this can be a set of recursive invocations, a loop or any variation/combination of these.
+  - we can give back the control to the event loop after each of these steps completes.
+
+  ```ts
+    _combineInterleaved (set, subset) {
+      this.runningCombine++
+      //nextTick run before the pending I/O
+      setImmediate(() => { //defer invocation
+        this._combine(set,subset)
+        if(--this.runningCombine==0) {
+          this.emit('end')
+        }
+      })
+    }
+
+    _combine (set, subset) {
+      for(let i=0, len = set.lenght; i < len; i++) {
+        const newSubset = subset.concat(set[i])
+        this._combineInterleaved(
+          set.slice(i+1), newSubset
+        )
+        this._processSubset(newSubset)
+      }
+    }
+
+    start() {
+      this.runningCombine = 0
+      this._combineInterleaved(this.set,[])
+    }
+  ```
+
+- external processes
+
+  - pros
+    1. synchronous task can run full speed, without the need to interleave the steps of its execution
+    2. working with processes in Node.js is simple, probably easier than modifying an algorithm to use setImmediate()
+    3. the external process even can be C or Go/Rust
+  - process pool, allow us to create a pool of running processes. and dont allow the denial of service attacks
+
+  ```ts
+  import { fork } from 'child_process';
+  export class ProcessPool {
+    constructor(file, numOfPool) {
+      this.file = file;
+      this.poolMax = numOfPool;
+      this.pool = [];
+      this.active = [];
+      this.waiting = [];
+    }
+    acquire() {
+      return new Promise((res, rej) => {
+        let worker;
+        if (this.pool.length > 0) {
+          worker = this.pool.pop();
+          this.active.push(worker);
+          return resolve(worker);
+        }
+
+        if (this.active.length >= this.poolMax) {
+          return this.waiting.push({ res, rej });
+        }
+
+        worker = fork(this.file);
+        worker.once('message', msg => {
+          if (msg === 'ready') {
+            this.active.push(worker);
+            return resolve(worker);
+          }
+          worker.kill();
+          reject(new Error('Improper process start'));
+        });
+
+        worker.once('exit', code => {
+          console.log(`Worker exited with code ${code}`);
+          this.active = this.active.filter(w => worker !== w);
+          this.pool = this.pool.filter(w => worker !== w);
+        });
+      });
+    }
+
+    release(worker) {
+      if (this.waiting.length > 0) {
+        const { resolve } = this.waiting.shift();
+        return resolve(worker);
+      }
+      this.active = this.active.filter(w => worker !== w);
+      this.pool.push(worker);
+    }
+  }
+  ```
+
+  - subset sum fork, abstracting a subsetSum task running in child process.
+
+  ```ts
+  import { EventEmitter } from 'events';
+  import { dirname, join } from 'path';
+  import { fileURLToPath } from 'url';
+  import { ProcessPool } from './processPool.js';
+  const __dirname = dirname(fileURLToPath(import.meta.url));
+  const workerFile = join(__dirname, 'workers', 'subsetSumProcessWorker.js');
+  const workers = new ProcessPool(workerFile, 2);
+  export class SubsetSum extends EventEmitter {
+    constructor(sum, set) {
+      super();
+      this.sum = sum;
+      this.set = set;
+    }
+    async start() {
+      const worker = await workers.acquire();
+      worker.send({ sum: this.sum, set: this.set });
+      const onMessage = msg => {
+        if (msg.event === 'end') {
+          worker.removeListener('message', onMessage);
+          workers.release(worker);
+        }
+        this.emit(msg.event, msg.data);
+      };
+      worker.on('message', onMessage);
+    }
+  }
+  ```
+
+  - worker(child process)
+
+  ```ts
+  import { SubsetSum } from '../subsetSum.js';
+  process.on('message', msg => {
+    const subsetSum = new SubsetSum(msg.sum, msg.set);
+    subsetSum.on('match', data => {
+      process.send({ event: 'match', data: data });
+    });
+    subsetSum.on('end', data => {
+      process.send({ event: 'end', data: data });
+    });
+    subsetSum.start();
+  });
+  process.send('ready');
+  ```
+
+- worker threads
+
+  - since Node 10.5 we can runing another thread outside of the main event loop called worker threads
+  - thread in js dont allow the deep synchronization and sharing capabilities supported by other language.
+  - Worker threads are essentially thread that dont share anything with the main application thread, running on their own V8 instance with independent Node.js runtime and event loop.
+  - the way of communication is based on the channels. the medium of the message inside the channels is the ArrayBuffer object.
+
+  ```ts
+  import { Worker } from 'worker_threads';
+  export class ThreadPool {
+    acquire() {
+      return new Promise((res, rej) => {
+        let worker;
+        if (this.pool.length > 0) {
+          worker = this.pool.pop();
+          this.active.push(worker);
+          return resolve(worker);
+        }
+        if (this.active.length >= this.poolMax) {
+          return this.waiting.push({
+            res,
+            rej
+          });
+        }
+        worker = new Worker(this.file);
+        worker.once('online', () => {
+          this.active.push(worker);
+          resolve(worker);
+        });
+        worker.once('exit', code => {
+          console.log(`Worker exited with code ${code}`);
+          this.active = this.active.filter(w => worker !== w);
+          this.pool = this.pool.filter(w => worker !== w);
+        });
+      });
+    }
+  }
+
+  import { parentPort } from 'worker_threads';
+  import { subsetSum } from '../subsetSum.js';
+  parentPort.on('message', msg => {
+    const subsetSum = new SubsetSum(msg.sum, msg.set);
+    subsetSum.on('match', data => {
+      parentPort.postMessage({ event: 'match', data: data });
+    });
+    subsetSum.on('end', data => {
+      parentPort.postMessage({
+        event: 'end',
+        data: data
+      });
+    });
+    subsetSum.start();
+  });
+  ```
+
+  - production: workerpool, piscina
