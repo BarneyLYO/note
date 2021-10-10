@@ -125,3 +125,118 @@ function searchRange(nums: number[], target: number): number[] {
   return [-1, -1];
 }
 ```
+
+# 33. 搜索旋转排序数组
+
+```
+整数数组 nums 按升序排列，数组中的值 互不相同 。
+
+在传递给函数之前，nums 在预先未知的某个下标 k（0 <= k < nums.length）上进行了 旋转，使数组变为 [nums[k], nums[k+1], ..., nums[n-1], nums[0], nums[1], ..., nums[k-1]]（下标 从 0 开始 计数）。例如， [0,1,2,4,5,6,7] 在下标 3 处经旋转后可能变为 [4,5,6,7,0,1,2] 。
+
+给你 旋转后 的数组 nums 和一个整数 target ，如果 nums 中存在这个目标值 target ，则返回它的下标，否则返回 -1 。
+```
+
+```ts
+function search(nums: number[], target: number): number {
+  let lo = 0;
+  let hi = nums.length - 1;
+  //[lo,hi]
+  while (lo <= hi) {
+    const mid = lo + ((hi - lo) >> 1);
+    if (nums[mid] === target) {
+      return mid;
+    }
+
+    // 4,5,6,7,8,9,1,2,3 target = 3
+    // -i,-i,...-i,1,2,3
+    // 4,5,6,7,8,9,1,2,3 target = 5
+    // 4,5,6,7,8,9,+i,+i,+i
+
+    if (target >= nums[0]) {
+      // target place at the left side
+      if (nums[mid] < nums[0]) {
+        //mid at right side
+        nums[mid] = Infinity;
+      }
+    } else if (target < nums[0]) {
+      // target place at right side
+      if (nums[mid] >= nums[0]) {
+        // mid at left side
+        nums[mid] = -Infinity;
+      }
+    }
+
+    if (nums[mid] < target) {
+      lo = mid + 1;
+    } else if (nums[mid] > target) {
+      hi = mid - 1;
+    }
+  }
+
+  return -1;
+}
+```
+
+# 69. Sqrt(x)
+
+```
+给你一个非负整数 x ，计算并返回 x 的 算术平方根 。
+
+由于返回类型是整数，结果只保留 整数部分 ，小数部分将被 舍去 。
+
+注意：不允许使用任何内置指数函数和算符，例如 pow(x, 0.5) 或者 x ** 0.5 。
+
+```
+
+```ts
+function mySqrt(x: number): number {
+  // ans 是满足 k^2 ≤x 的最大 k 值
+  let l = 0;
+  let r = x;
+  let ans = -1;
+  // [0:x], we need find the max val of mid * mid < x
+  while (l <= r) {
+    const mid = l + ((r - l) >> 1);
+    const candidate = mid * mid;
+
+    // [l , mid - 1]
+    if (candidate > x) {
+      r = mid - 1;
+    }
+    // [mid + 1, r]
+    else if (candidate <= x) {
+      ans = mid;
+      l = mid + 1;
+    }
+  }
+  return ans;
+}
+```
+
+# 162. 寻找峰值
+
+```
+峰值元素是指其值严格大于左右相邻值的元素。
+
+给你一个整数数组 nums，找到峰值元素并返回其索引。数组可能包含多个峰值，在这种情况下，返回 任何一个峰值 所在位置即可。
+
+你可以假设 nums[-1] = nums[n] = -∞ 。
+
+你必须实现时间复杂度为 O(log n) 的算法来解决此问题。
+```
+
+```ts
+function findPeakElement(nums: number[]): number {
+  let l = 0;
+  let r = nums.length - 1;
+  while (l < r) {
+    const mid = l + ((r - l) >> 1);
+    if (nums[mid] < nums[mid + 1]) {
+      l = mid + 1;
+    } else {
+      r = mid;
+    }
+  }
+  return l;
+}
+```

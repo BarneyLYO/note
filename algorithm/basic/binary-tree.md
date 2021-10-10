@@ -181,58 +181,199 @@ const recoverTree = (root: TreeNode | null): void => {
 };
 ```
 
-# 322 给你一个整数数组 coins，表示不同面额的硬币, 以及一个整数 amount，表示总金额。计算并返回可以凑成总金额所需的 最少的硬币个数 。如果没有任何一种硬币组合能组成总金额，返回  -1 。你可以认为每种硬币的数量是无限的。暴力解
+# 110. 平衡二叉树
+
+```
+给定一个二叉树，判断它是否是高度平衡的二叉树。
+
+本题中，一棵高度平衡二叉树定义为：
+
+一个二叉树每个节点 的左右两个子树的高度差的绝对值不超过 1 。
+```
 
 ```ts
-const { MAX_SAFE_INTEGER: BIGGEST } = Number;
-function coinChange(coins: number[], amount: number): number {
-  const solutionMap: Map<number, number> = new Map();
+/**
+ * Definition for a binary tree node.
+ * class TreeNode {
+ *     val: number
+ *     left: TreeNode | null
+ *     right: TreeNode | null
+ *     constructor(val?: number, left?: TreeNode | null, right?: TreeNode | null) {
+ *         this.val = (val===undefined ? 0 : val)
+ *         this.left = (left===undefined ? null : left)
+ *         this.right = (right===undefined ? null : right)
+ *     }
+ * }
+ */
 
-  const topdown = (target: number) => {
-    if (target === 0) return 0;
-    if (target < 0) return -1; // no answer
-    if (solutionMap.has(target)) {
-      return solutionMap.get(target);
-    }
+function isBalanced(root: TreeNode | null): boolean {
+  if (!root) return true;
+  return isBalanced.hight(root) >= 0;
+}
 
-    let result = BIGGEST;
-    // n-tiers tree iterate
-    for (const coin of coins) {
-      const targetAfterReduce = target - coin;
+isBalanced.hight = (node: TreeNode | null) => {
+  if (!node) return 0;
+  const lH = isBalanced.hight(node.left);
+  if (lH === -1) {
+    return -1;
+  }
+  const rH = isBalanced.hight(node.right);
+  if (rH === -1) {
+    return -1;
+  }
 
-      const numOfCoinsAfterReduce = topdown(targetAfterReduce);
+  if (Math.abs(lH - rH) > 1) {
+    return -1;
+  }
 
-      if (numOfCoinsAfterReduce === -1) continue;
+  return Math.max(lH, rH) + 1;
+};
+```
 
-      // 1 + numOfCoinsAfterReduce(target - coin) = numOfCoinsFor(target)
-      result = Math.min(result, 1 + numOfCoinsAfterReduce);
-    }
+# 104. 二叉树的最大深度
 
-    result = result === BIGGEST ? -1 : result;
-    solutionMap.set(target, result);
-    return result;
-  };
+```ts
+function maxDepth(root: TreeNode | null): number {
+  if (!root) {
+    return 0;
+  }
 
-  return topdown(amount);
+  return 1 + Math.max(maxDepth(root.left), maxDepth(root.right));
 }
 ```
 
-# 全排列, backtrack
+# 112. 路径总和
+
+```
+给你二叉树的根节点 root 和一个表示目标和的整数 targetSum ，判断该树中是否存在 根节点到叶子节点 的路径，这条路径上所有节点值相加等于目标和 targetSum 。
+
+叶子节点 是指没有子节点的节点。
+```
 
 ```ts
-let result: Array<number[]> = [];
-function backtrack(nums: number[], track: Array<number>) {
-  if (track.length === nums.lenght) {
-    result.push([...track]);
+/**
+ * Definition for a binary tree node.
+ * class TreeNode {
+ *     val: number
+ *     left: TreeNode | null
+ *     right: TreeNode | null
+ *     constructor(val?: number, left?: TreeNode | null, right?: TreeNode | null) {
+ *         this.val = (val===undefined ? 0 : val)
+ *         this.left = (left===undefined ? null : left)
+ *         this.right = (right===undefined ? null : right)
+ *     }
+ * }
+ */
+
+function hasPathSum(root: TreeNode | null, targetSum: number): boolean {
+  return dfs(root, targetSum) === 0;
+}
+
+const dfs = (root: TreeNode | null, tgtSum: number) => {
+  if (!root && tgtSum !== 0) {
+    return -1;
+  } else if (!root && tgtSum === 0) {
+    return 0;
   }
 
-  for (let i = 0; i < nums.length; i++) {
-    if (track.indexOf(nums[i]) !== -1) {
-      continue;
-    }
-    track.push(nums[i]);
-    backtrack(nums, track);
-    track.pop();
+  if (tgtSum < 0) {
+    return -1;
   }
+
+  const tgt = tgtSum - root.val;
+  const left = dfs(root.left, tgt);
+  const right = dfs(root.right, tgt);
+
+  if (left === 0 || right === 0) {
+    return 0;
+  }
+  return -1;
+};
+```
+
+# 112. 路径总和
+
+```
+给你二叉树的根节点 root 和一个表示目标和的整数 targetSum ，判断该树中是否存在 根节点到叶子节点 的路径，这条路径上所有节点值相加等于目标和 targetSum 。
+叶子节点 是指没有子节点的节点。
+```
+
+```ts
+/**
+ * Definition for a binary tree node.
+ * class TreeNode {
+ *     val: number
+ *     left: TreeNode | null
+ *     right: TreeNode | null
+ *     constructor(val?: number, left?: TreeNode | null, right?: TreeNode | null) {
+ *         this.val = (val===undefined ? 0 : val)
+ *         this.left = (left===undefined ? null : left)
+ *         this.right = (right===undefined ? null : right)
+ *     }
+ * }
+ */
+
+function hasPathSum(root: TreeNode | null, targetSum: number): boolean {
+  if (!root) return false;
+  return dfs(root, 0, targetSum);
 }
+
+const dfs = (root: TreeNode | null, sum: number, tgt: number) => {
+  if (!root) {
+    return false;
+  }
+  if (!root.left && !root.right) {
+    return sum + root.val === tgt;
+  }
+  const lv = dfs(root.left, sum + root.val, tgt);
+  const rv = dfs(root.right, sum + root.val, tgt);
+  return lv || rv;
+};
+```
+
+# 108. 将有序数组转换为二叉搜索树
+
+```
+给你一个整数数组 nums ，其中元素已经按 升序 排列，请你将其转换为一棵 高度平衡 二叉搜索树。
+
+高度平衡 二叉树是一棵满足「每个节点的左右两个子树的高度差的绝对值不超过 1 」的二叉树。
+```
+
+```ts
+/**
+ * Definition for a binary tree node.
+ * class TreeNode {
+ *     val: number
+ *     left: TreeNode | null
+ *     right: TreeNode | null
+ *     constructor(val?: number, left?: TreeNode | null, right?: TreeNode | null) {
+ *         this.val = (val===undefined ? 0 : val)
+ *         this.left = (left===undefined ? null : left)
+ *         this.right = (right===undefined ? null : right)
+ *     }
+ * }
+ */
+type TreeRange = [start:number, end:number]
+function sortedArrayToBST(nums: number[]): TreeNode | null {
+    if(!nums.length) {
+        return null
+    }
+    return doMakeTree(
+        nums,
+        [0, nums.length - 1]
+    )
+
+};
+
+const doMakeTree = (nums:number[], range:TreeRange) => {
+    if(range[0] > range[1]){
+        return null
+    }
+    const mid = range[0] + ((range[1] - range[0]) >> 1)
+    const node = new TreeNode(nums[mid])
+    node.left = doMakeTree(nums, [range[0], mid - 1])
+    node.right = doMakeTree(nums, [mid + 1, range[1]])
+    return node
+}
+
 ```
