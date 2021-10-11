@@ -1050,3 +1050,69 @@ function canJump(nums: number[]): boolean {
   return true;
 }
 ```
+
+# 72. 编辑距离
+
+```
+给你两个单词 word1 和 word2，请你计算出将 word1 转换成 word2 所使用的最少操作数 。
+
+你可以对一个单词进行如下三种操作：
+
+插入一个字符
+删除一个字符
+替换一个字符
+```
+
+```ts
+function minDistance(word1: string, word2: string): number {
+  const { min } = Math;
+  /*
+        [     "" a ab 
+           "" [0,1,2]
+            b [1,1,1]
+           bc [2,2,2]
+          bcd [3,3,3]
+        ]
+
+        "" -> "" 0
+        b   -> a  modify
+        b   -> ab add and modify
+        bc  -> "" 2 * delete
+        bc  -> a  1 delete 1 modify
+        bc  -> ab 1 delete 1 add
+
+        minDistance[i][j] = min (
+            minDistance[i - 1][j] //add
+            minDistance[i][j - 1] //delete
+            minDistance[i - 1][j - 1] //modify
+        )
+        if(w1[i - 1] === w2[j - 1]) 
+            minDistance[i][j] = min(
+                minDistance[i - 1][j - 1]
+                minDistance[i][j]
+            ) 
+     */
+
+  const dp = Array.from({ length: word1.length + 1 }, () =>
+    Array.from({ length: word2.length + 1 }, () => 0)
+  );
+
+  for (let i = 0; i < dp.length; i++) {
+    dp[i][0] = i;
+  }
+  for (let i = 0; i < dp[0].length; i++) {
+    dp[0][i] = i;
+  }
+
+  for (let i = 1; i < dp.length; i++) {
+    for (let j = 1; j < dp[i].length; j++) {
+      dp[i][j] = min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]) + 1;
+      if (word2[j - 1] === word1[i - 1]) {
+        dp[i][j] = min(dp[i - 1][j - 1], dp[i][j]);
+      }
+    }
+  }
+
+  return dp[dp.length - 1][dp[0].length - 1];
+}
+```
