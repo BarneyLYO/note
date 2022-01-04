@@ -1,0 +1,26 @@
+# canvas object
+
+- 画布的状态包括
+  - translate: 移动画布（x,y)
+  - rotate: 旋转画布（弧度）
+  - scale: 缩放画布（水平倍数，垂直倍数）
+  - strokeStyle
+  - fillStyle
+  - globalAlpha
+  - lineWidth
+  - lineCap
+  - lineJoin
+  - miterLimit
+  - shadowOffsetX
+  - shadowOffsetY
+  - shadowBlur
+  - shadowColor
+  - globalCompositeOperation: 图形组合方式
+  - 目前截图的路径
+- save/restore
+  - save 保存当前的状态进入栈
+  - restore 恢复最后保存的状态
+- 绘制方式
+  - fill, 填充
+  - stroke, 描线
+  - clip, 裁剪， 自动 closePath

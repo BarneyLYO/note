@@ -1,0 +1,140 @@
+body {
+  margin: 0;
+}
+body > div {
+  margin: 1rem 0;
+}
+.fullscreen {
+  position: relative;
+  margin: 0;
+
+  width: 400px;
+  height: 400px;
+}
+.fullscreen > * {
+  position: absolute;
+  left: 0;
+  right: 0;
+}
+.fullscreen header {
+  top: 0;
+  height: 50px;
+  background-color: #f66;
+}
+.fullscreen footer {
+  bottom: 0;
+  height: 50px;
+  background-color: #66f;
+}
+.fullscreen main {
+  top: 50px;
+  bottom: 50px;
+  background-color: #3c9;
+}
+
+.fflex {
+  display: flex;
+  flex-direction: column;
+
+  width: 400px;
+  height: 400px;
+}
+.fflex header {
+  height: 50px;
+  background-color: #f66;
+}
+.fflex footer {
+  height: 50px;
+  background-color: #66f;
+}
+.fflex main {
+  flex: 1;
+  background-color: #3c9;
+}
+
+.two-column {
+  width: 400px;
+  height: 400px;
+}
+
+.two-column .left {
+  float: left;
+  width: 100px;
+  height: 100%;
+  background-color: #f66;
+}
+
+.two-column .right {
+  /* BFC */
+  overflow: hidden; 
+  margin-left: 100px;
+  height: 100%;
+  background-color: #66f;
+}
+
+.three-column {
+  width: 400px;
+  height: 400px;
+}
+
+.three-column .left {
+  float: left;
+  width: 50px;
+  height: 100%;
+  background-color: #f66;
+}
+
+.three-column .center {
+  float: left;
+  width: 100px;
+  height: 100%;
+  background-color: #66f;
+}
+
+.three-column .right {
+  overflow: hidden;
+  height: 100%;
+  background-color: #3c9;
+}
+
+.three-flex {
+  display: flex;
+  width: 400px;
+  height: 400px;
+}
+
+.three-flex .left {
+  width: 50px;
+  background-color: #f66;
+}
+
+.three-flex .center {
+  width: 100px;
+  background-color: #66f;
+}
+
+.three-flex .right {
+  flex:1;
+  background-color: #3c9;
+}
+
+.grail {
+  display: flex;
+  width: 400px;
+  height: 400px;
+}
+
+.grail .left {
+  width: 100px;
+  background-color: #f66;
+}
+
+.grail .center {
+  flex: 1;
+  background-color: #3c9;
+}
+
+.grail .right {
+  width: 100px;
+  background-color: #66f;
+}

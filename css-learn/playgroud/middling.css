@@ -1,0 +1,82 @@
+body > div {
+  margin: 1rem 0;
+}
+
+.base {
+  background-color: red;
+  color: white;
+}
+
+.base  > p {
+  background-color: black;
+}
+
+
+.h-middling {
+  width: 400px;
+  height: 400px;
+}
+
+.h-middling > p {
+  margin: 0 auto;
+  width: fit-content;
+  height: 100px;
+ }
+
+.inline-middle {
+   line-height: 200px;
+   text-align: center;
+   font-size: 0;
+   background-color: aqua;
+   height: 200px;
+ 
+ }
+
+.inline-middle div {
+  display: inline-block;
+  vertical-align: middle;
+  background-color: yellow;
+  font-size: 1rem;
+}
+
+.pos-middle {
+  position: relative;
+  width: 400px;
+  height: 400px;
+  background-color: black;
+}
+
+.pos-middle div {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  background-color: beige;
+  transform: translate(-50%,-50%);
+}
+
+.flex-layout {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  height: 400px;
+  width: 400px;
+
+  background-color: red;
+}
+
+.flex-layout div {
+  background-color: blueviolet;
+}
+
+.flex-margin {
+  display: flex;
+  width: 400px;
+  height: 400px;
+  background-color: aquamarine;
+}
+
+.flex-margin > div {
+  margin: auto;
+  background-color: red;
+}

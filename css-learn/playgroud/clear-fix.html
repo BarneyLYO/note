@@ -1,0 +1,82 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    .parent {
+      margin: 1rem 0;
+      border: 2px solid red;
+      background-color: black;
+      color: white;
+    }
+
+    .float-right {
+      float: right;
+      margin:2rem;
+      border: 2px solid black;
+
+      background-color: aqua;
+      color: black;
+
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .float-right.toleft {
+      float: left;
+    }
+
+    .parent.withfix{
+      background-color: azure;
+      color: black;
+    }
+
+    .parent.withfix::after {
+      display: block;
+      visibility: hidden;
+      clear: both;
+      height: 0;
+      font-size: 0;
+      content: "";
+    }
+  </style>
+</head>
+<body>
+  <div style="overflow: auto;" class="parent">
+    <p class="float-right">
+      Im floating
+    </p>
+    <p>
+      the modern broswer using overflow:auto on containing element, will automatically clearfix
+    </p>    
+
+  </div>
+
+  <div class="parent withfix">
+    <p class="float-right">
+      Im floating
+    </p>
+
+    <p>
+      Instead we can use the container::after the pseudo element 
+      to fix the clearfix issue
+    </p>
+  </div>
+
+  <script>
+    document.addEventListener('click', e => {
+      const {target} = e
+      if(target instanceof HTMLElement) {
+        const classArray = [...target.classList]
+        if(classArray.indexOf("toleft") === -1) {
+          target.classList.add('toleft')
+          return
+        }
+        target.classList.remove('toleft')
+      }
+    })
+  </script>
+</body>
+</html>
