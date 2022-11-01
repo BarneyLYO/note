@@ -107,3 +107,7 @@ dist
 ./vue-play/*/node_modules/
 
 ./*/node_modules/
+
+*.jit
+*.aot
+*.exe
